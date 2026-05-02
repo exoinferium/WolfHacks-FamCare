@@ -1,286 +1,530 @@
-// API Base URL
-const API_URL = 'http://localhost:5000/api';
+// FamCare - JavaScript Logic
+const API_BASE_URL = 'http://localhost:5000/api';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    loadChatHistory();
-    loadFeedback();
+    loadRecords();
 });
 
-// ============ SECTION NAVIGATION ============
-
+// ============ NAVIGATION ============
 function showSection(sectionId) {
     // Hide all sections
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
     });
 
-    // Remove active class from nav links
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-    });
-
     // Show selected section
     document.getElementById(sectionId).classList.add('active');
 
-    // Add active class to clicked nav link
+    // Update nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
     event.target.classList.add('active');
-}
 
-// ============ CHAT FUNCTIONALITY ============
-
-let currentConversationId = null;
-let messageCount = 0;
-
-function handleKeyPress(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
+    // Reload records when viewing records section
+    if (sectionId === 'records') {
+        loadRecords();
     }
 }
 
-function sendMessage(predefinedMessage = null) {
-    const input = document.getElementById('user-input');
-    const message = predefinedMessage || input.value.trim();
+// ============ ASSESSMENT LOGIC ============
+let currentStep = 1;
 
-    if (!message) return;
+function nextStep() {
+    // Validate current step
+    if (!validateStep(currentStep)) {
+        alert('Please fill in all required fields');
+        return;
+    }
 
-    // Add user message to chat
-    addMessageToChat('user', message);
-    input.value = '';
-
-    // Send to backend
-    fetch(`${API_URL}/chat`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            message: message,
-            conversation_id: currentConversationId
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            addMessageToChat('bot', data.response);
-            currentConversationId = data.conversation_id;
-            messageCount++;
-            
-            // Save to local history
-            saveToLocalHistory(message, data.response);
-        } else {
-            addMessageToChat('bot', 'Sorry, I encountered an error. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        addMessageToChat('bot', 'Unable to connect to the server. Please check your connection.');
-    });
+    currentStep++;
+    updateStepDisplay();
 }
 
-function addMessageToChat(sender, message) {
-    const chatMessages = document.getElementById('chat-messages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}-message`;
+function prevStep() {
+    currentStep--;
+    updateStepDisplay();
+}
+
+function validateStep(step) {
+    if (step === 1) {
+        const name = document.getElementById('patientName').value.trim();
+        const age = document.getElementById('patientAge').value;
+        return name && age;
+    } else if (step === 2) {
+        const symptoms = document.getElementById('symptoms').value.trim();
+        const duration = document.getElementById('symptomDuration').value;
+        const severity = document.querySelector('input[name="severity"]:checked');
+        return symptoms && duration && severity;
+    }
+    return true;
+}
+
+function updateStepDisplay() {
+    document.querySelectorAll('.assessment-step').forEach(step => {
+        step.classList.remove('active');
+    });
+    document.getElementById(`step${currentStep}`).classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+function submitAssessment() {
+    // Collect data
+    const assessment = {
+        patientName: document.getElementById('patientName').value,
+        patientAge: parseInt(document.getElementById('patientAge').value),
+        patientGender: document.getElementById('patientGender').value,
+        symptoms: document.getElementById('symptoms').value,
+        symptomDuration: document.getElementById('symptomDuration').value,
+        severity: document.querySelector('input[name="severity"]:checked').value,
+        hasFever: document.getElementById('hasFever').checked,
+        emergencySymptoms: getEmergencySymptoms(),
+        chronicConditions: document.getElementById('chronicConditions').value,
+        medications: document.getElementById('medications').value,
+        timestamp: new Date().toISOString()
+    };
+
+    // Analyze and display results
+    const result = analyzeAssessment(assessment);
+    displayResults(result, assessment);
+
+    // Store for later
+    window.currentAssessment = { result, assessment };
+}
+
+function getEmergencySymptoms() {
+    const emergencySymptoms = [
+        'difficulty-breathing',
+        'chest-pain',
+        'confusion',
+        'severe-pain',
+        'uncontrollable-bleeding',
+        'loss-of-consciousness',
+        'allergic-reaction',
+        'poisoning'
+    ];
+
+    return emergencySymptoms
+        .filter(id => document.getElementById(id).checked)
+        .map(id => id.replace(/-/g, ' '));
+}
+
+function analyzeAssessment(assessment) {
+    let careLevel = 'self-care';
+    let score = 0;
+
+    // Emergency red flags
+    const emergencyFlags = [
+        'chest pain',
+        'difficulty breathing',
+        'loss of consciousness',
+        'uncontrollable bleeding',
+        'confusion',
+        'severe pain',
+        'poisoning',
+        'allergic reaction'
+    ];
+
+    const symptomsLower = assessment.symptoms.toLowerCase();
+
+    // Check for emergency symptoms
+    for (let flag of emergencyFlags) {
+        if (symptomsLower.includes(flag) || assessment.emergencySymptoms.includes(flag)) {
+            careLevel = 'emergency';
+            score = 3;
+            break;
+        }
+    }
+
+    // If not emergency, check for urgent symptoms
+    if (careLevel !== 'emergency') {
+        const urgentKeywords = [
+            'severe',
+            'difficulty',
+            'uncontrollable',
+            'persistent',
+            'worsening',
+            'sudden',
+            'intense'
+        ];
+
+        for (let keyword of urgentKeywords) {
+            if (symptomsLower.includes(keyword)) {
+                careLevel = 'urgent-care';
+                score = 2;
+                break;
+            }
+        }
+    }
+
+    // Check severity level
+    if (assessment.severity === 'Severe' && careLevel === 'self-care') {
+        careLevel = 'urgent-care';
+        score = 2;
+    } else if (assessment.severity === 'Moderate' && careLevel === 'self-care') {
+        careLevel = 'urgent-care';
+        score = 2;
+    }
+
+    // Check fever with other conditions
+    if (assessment.hasFever && assessment.severity !== 'Mild') {
+        if (careLevel === 'self-care') {
+            careLevel = 'urgent-care';
+            score = 2;
+        }
+    }
+
+    // Check chronic conditions
+    if (assessment.chronicConditions.toLowerCase() !== 'none' && 
+        assessment.chronicConditions.trim() !== '') {
+        if (careLevel === 'self-care') {
+            careLevel = 'urgent-care';
+            score = 2;
+        }
+    }
+
+    // Generate recommendations
+    const recommendations = generateRecommendations(careLevel, assessment);
+
+    return {
+        careLevel,
+        score,
+        recommendations,
+        warningSigns: getWarningSignsForCondition(assessment.symptoms)
+    };
+}
+
+function generateRecommendations(careLevel, assessment) {
+    const recommendations = {
+        'self-care': [
+            'Rest and stay hydrated',
+            'Use over-the-counter pain relievers if needed',
+            'Monitor your symptoms regularly',
+            'Keep a record of any changes',
+            'Maintain good hygiene',
+            'Avoid strenuous activities',
+            'If symptoms persist beyond 7 days, consult a healthcare provider'
+        ],
+        'urgent-care': [
+            'Visit an urgent care clinic or walk-in clinic',
+            'Schedule an appointment with your primary care doctor',
+            'Seek care within the next few hours',
+            'Do not delay - symptoms require professional evaluation',
+            'Bring a list of your medications and symptoms',
+            'Have your insurance card ready',
+            'Monitor for any worsening symptoms'
+        ],
+        'emergency': [
+            'CALL 911 IMMEDIATELY',
+            'Do not wait or delay',
+            'Do not drive yourself if possible',
+            'Inform emergency responders about your symptoms',
+            'If choking, perform the Heimlich maneuver',
+            'If unconscious, place in recovery position',
+            'Have your medical history ready for paramedics',
+            'Emergency care is critical - seek help now'
+        ]
+    };
+
+    return recommendations[careLevel] || recommendations['self-care'];
+}
+
+function getWarningSignsForCondition(symptoms) {
+    const symptomsLower = symptoms.toLowerCase();
+    const warningSigns = [];
+
+    if (symptomsLower.includes('fever')) {
+        warningSigns.push('Fever above 103°F (39.4°C)');
+        warningSigns.push('Fever lasting more than 3 days');
+        warningSigns.push('Fever accompanied by confusion or rash');
+    }
+
+    if (symptomsLower.includes('cough') || symptomsLower.includes('cold')) {
+        warningSigns.push('Cough lasting more than 2 weeks');
+        warningSigns.push('Coughing up blood or dark phlegm');
+        warningSigns.push('Shortness of breath');
+    }
+
+    if (symptomsLower.includes('headache')) {
+        warningSigns.push('Sudden severe headache');
+        warningSign.push('Headache with stiff neck and fever');
+        warningSigns.push('Persistent headache with vision changes');
+    }
+
+    if (symptomsLower.includes('stomach') || symptomsLower.includes('abdominal')) {
+        warningSigns.push('Severe abdominal pain');
+        warningSigns.push('Vomiting for more than 4 hours');
+        warningSign.push('Blood in vomit or stool');
+    }
+
+    if (warningSign.length === 0) {
+        warningSign.push('Any symptom that worsens significantly');
+        warningSign.push('Symptoms that don\'t improve after 1 week');
+        warningSign.push('Development of new symptoms');
+    }
+
+    return warningSign;
+}
+
+function displayResults(result, assessment) {
+    const resultsDiv = document.getElementById('resultContent');
+    const assessmentDiv = document.getElementById('step3');
+    assessmentDiv.style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+
+    const careColor = result.careLevel === 'emergency' ? '#c0392b' : 
+                     result.careLevel === 'urgent-care' ? '#f39c12' : '#27ae60';
     
-    const avatar = sender === 'user' ? '👤' : '👨‍👩‍👧‍👦';
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    messageDiv.innerHTML = `
-        <div class="message-avatar">${avatar}</div>
-        <div class="message-content">
-            <p>${escapeHtml(message)}</p>
-            <div class="message-time">${time}</div>
+    const careEmoji = result.careLevel === 'emergency' ? '🚨' : 
+                     result.careLevel === 'urgent-care' ? '⚠️' : '✅';
+
+    const careLevelText = result.careLevel === 'emergency' ? 'EMERGENCY - SEEK IMMEDIATE CARE' :
+                         result.careLevel === 'urgent-care' ? 'URGENT CARE - SEEK CARE SOON' :
+                         'SELF-CARE - Safe to manage at home';
+
+    let html = `
+        <div class="result-card ${result.careLevel}">
+            <div class="result-title">${careEmoji} ${careLevelText}</div>
+            
+            <h4>Patient Information:</h4>
+            <p><strong>${assessment.patientName}</strong>, Age ${assessment.patientAge}${assessment.patientGender ? ' (' + assessment.patientGender + ')' : ''}</p>
+            
+            <h4>Assessment Summary:</h4>
+            <p><strong>Symptoms:</strong> ${assessment.symptoms}</p>
+            <p><strong>Duration:</strong> ${assessment.symptomDuration}</p>
+            <p><strong>Severity:</strong> ${assessment.severity}</p>
+            
+            <h4>Recommended Care Steps:</h4>
+            <ul class="result-recommendations">
+                ${result.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+            </ul>
+            
+            ${result.warningSign && result.warningSign.length > 0 ? `
+                <div class="warning-signs">
+                    <h4>⚠️ Watch for these warning signs:</h4>
+                    <ul>
+                        ${result.warningSign.map(sign => `<li>${sign}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
         </div>
     `;
-    
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    resultsDiv.innerHTML = html;
+    window.scrollTo(0, 0);
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+function resetAssessment() {
+    // Reset form
+    document.getElementById('patientName').value = '';
+    document.getElementById('patientAge').value = '';
+    document.getElementById('patientGender').value = '';
+    document.getElementById('symptoms').value = '';
+    document.getElementById('symptomDuration').value = '';
+    document.querySelector('input[name="severity"]').checked = false;
+    document.getElementById('hasFever').checked = false;
+    document.getElementById('chronicConditions').value = '';
+    document.getElementById('medications').value = '';
 
-// ============ CHAT HISTORY ============
-
-function saveToLocalHistory(userMessage, botResponse) {
-    let history = JSON.parse(localStorage.getItem('chatHistory')) || [];
-    
-    history.push({
-        userMessage: userMessage,
-        botResponse: botResponse,
-        timestamp: new Date().toLocaleString()
+    // Reset emergency checkboxes
+    document.querySelectorAll('.checkbox-group input[type="checkbox"]').forEach(box => {
+        box.checked = false;
     });
-    
-    localStorage.setItem('chatHistory', JSON.stringify(history));
+
+    // Reset display
+    currentStep = 1;
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('step3').style.display = 'block';
+    updateStepDisplay();
 }
 
-function loadChatHistory() {
-    const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
-    const historyContainer = document.getElementById('chat-history');
-    
-    if (history.length === 0) {
-        historyContainer.innerHTML = '<p class="empty-state">No chat history yet. Start a conversation!</p>';
-        return;
-    }
-    
-    historyContainer.innerHTML = history.reverse().map((item, index) => `
-        <div class="chat-history-item">
-            <div class="history-item-date">${item.timestamp}</div>
-            <div class="history-item-preview">
-                <strong>You:</strong> ${item.userMessage}
-            </div>
-            <div class="history-item-preview">
-                <strong>FamCare:</strong> ${item.botResponse}
-            </div>
-            <div class="history-item-actions">
-                <button onclick="removeHistoryItem(${index})">Delete</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function removeHistoryItem(index) {
-    let history = JSON.parse(localStorage.getItem('chatHistory')) || [];
-    history.splice(index, 1);
-    localStorage.setItem('chatHistory', JSON.stringify(history));
-    loadChatHistory();
-}
-
-function clearChatHistory() {
-    if (confirm('Are you sure you want to clear all chat history?')) {
-        localStorage.removeItem('chatHistory');
-        loadChatHistory();
-    }
-}
-
-// ============ FEEDBACK ============
-
-let currentRating = 0;
-
-function setRating(rating) {
-    currentRating = rating;
-    document.getElementById('feedback-rating').value = rating;
-    
-    // Visual feedback
-    document.querySelectorAll('.rating-stars .star').forEach((star, index) => {
-        if (index < rating) {
-            star.classList.add('active');
-        } else {
-            star.classList.remove('active');
-        }
-    });
-}
-
-function submitFeedback() {
-    const type = document.getElementById('feedback-type').value;
-    const message = document.getElementById('feedback-message').value.trim();
-    const rating = currentRating;
-
-    if (!message || rating === 0) {
-        alert('Please provide feedback and a rating.');
+function saveAssessment() {
+    if (!window.currentAssessment) {
+        alert('No assessment to save');
         return;
     }
 
-    // Send to backend
-    fetch(`${API_URL}/feedback`, {
+    const { result, assessment } = window.currentAssessment;
+
+    // Try to save to backend
+    fetch(`${API_BASE_URL}/assessment-record`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            type: type,
-            message: message,
-            rating: rating
+            patientName: assessment.patientName,
+            patientAge: assessment.patientAge,
+            patientGender: assessment.patientGender,
+            symptoms: assessment.symptoms,
+            symptomDuration: assessment.symptomDuration,
+            severity: assessment.severity,
+            careLevel: result.careLevel,
+            hasFever: assessment.hasFever,
+            chronicConditions: assessment.chronicConditions,
+            medications: assessment.medications,
+            timestamp: assessment.timestamp
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('✓ Thank you for your feedback!');
-            
-            // Clear form
-            document.getElementById('feedback-type').value = 'bug';
-            document.getElementById('feedback-message').value = '';
-            currentRating = 0;
-            document.querySelectorAll('.rating-stars .star').forEach(star => {
-                star.classList.remove('active');
-            });
-            
-            // Reload feedback list
-            loadFeedback();
+    }).then(response => {
+        if (response.ok) {
+            alert('Assessment saved successfully!');
+            // Reload records
+            loadRecords();
+        } else {
+            // Fallback to local storage
+            saveToLocalStorage(assessment, result);
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        // Save locally if server is down
-        saveFeedbackLocally(type, message, rating);
+    }).catch(() => {
+        // Fallback to local storage
+        saveToLocalStorage(assessment, result);
     });
+
+    function saveToLocalStorage(assessment, result) {
+        let records = JSON.parse(localStorage.getItem('famcareRecords')) || [];
+        records.push({
+            id: Date.now(),
+            ...assessment,
+            careLevel: result.careLevel
+        });
+        localStorage.setItem('famcareRecords', JSON.stringify(records));
+        alert('Assessment saved to your device!');
+        loadRecords();
+    }
 }
 
-function saveFeedbackLocally(type, message, rating) {
-    let feedback = JSON.parse(localStorage.getItem('feedbackData')) || [];
-    
-    feedback.push({
-        type: type,
-        message: message,
-        rating: rating,
-        timestamp: new Date().toLocaleString()
-    });
-    
-    localStorage.setItem('feedbackData', JSON.stringify(feedback));
-    alert('✓ Feedback saved locally. It will be sent when the server is available.');
-    loadFeedback();
-}
-
-function loadFeedback() {
-    // Try to load from server first
-    fetch(`${API_URL}/feedback`)
+// ============ RECORDS MANAGEMENT ============
+function loadRecords() {
+    // Try to load from backend first
+    fetch(`${API_BASE_URL}/assessments`)
         .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayFeedback(data.feedback);
-            } else {
-                // Fall back to local storage
-                loadLocalFeedback();
-            }
+        .then(records => {
+            displayRecords(records);
         })
-        .catch(error => {
-            console.error('Error:', error);
-            loadLocalFeedback();
+        .catch(() => {
+            // Fallback to local storage
+            const records = JSON.parse(localStorage.getItem('famcareRecords')) || [];
+            displayRecords(records);
         });
 }
 
-function loadLocalFeedback() {
-    const feedback = JSON.parse(localStorage.getItem('feedbackData')) || [];
-    displayFeedback(feedback);
-}
+function displayRecords(records) {
+    const recordsList = document.getElementById('recordsList');
 
-function displayFeedback(feedbackList) {
-    const feedbackContainer = document.getElementById('feedback-items');
-    
-    if (feedbackList.length === 0) {
-        feedbackContainer.innerHTML = '<p class="empty-state">No feedback yet</p>';
+    if (records.length === 0) {
+        recordsList.innerHTML = '<p class="empty-state">No records yet. Start an assessment to create your first record.</p>';
         return;
     }
-    
-    feedbackContainer.innerHTML = feedbackList.reverse().slice(0, 10).map(item => `
-        <div class="feedback-item">
-            <span class="feedback-item-type">${item.type || item.feedback_type}</span>
-            <div class="feedback-item-rating">⭐ Rating: ${item.rating}/5</div>
-            <div class="feedback-item-message">${escapeHtml(item.message || item.feedback_message)}</div>
-            <div class="feedback-item-date">${item.timestamp || item.created_at}</div>
+
+    recordsList.innerHTML = records.map(record => `
+        <div class="record-item">
+            <div class="record-header">
+                <div>
+                    <div class="record-title">${record.patientName}</div>
+                    <div class="record-date">${new Date(record.timestamp).toLocaleDateString()} ${new Date(record.timestamp).toLocaleTimeString()}</div>
+                </div>
+                <span class="record-severity ${record.careLevel.split('-')[0]}">${record.careLevel.replace('-', ' ').toUpperCase()}</span>
+            </div>
+            <div class="record-details">
+                <div class="record-detail">
+                    <div class="record-detail-label">Age</div>
+                    <div class="record-detail-value">${record.patientAge} years</div>
+                </div>
+                <div class="record-detail">
+                    <div class="record-detail-label">Severity</div>
+                    <div class="record-detail-value">${record.severity}</div>
+                </div>
+                <div class="record-detail">
+                    <div class="record-detail-label">Duration</div>
+                    <div class="record-detail-value">${record.symptomDuration}</div>
+                </div>
+                <div class="record-detail">
+                    <div class="record-detail-label">Symptoms</div>
+                    <div class="record-detail-value">${record.symptoms.substring(0, 50)}...</div>
+                </div>
+            </div>
+            <div class="record-actions">
+                <button class="btn-view" onclick="viewRecord(${record.id})">View Details</button>
+                <button class="btn-delete" onclick="deleteRecord(${record.id})">Delete</button>
+            </div>
         </div>
     `).join('');
 }
 
-// ============ UTILITIES ============
+function filterRecords() {
+    const searchInput = document.getElementById('searchInput').value.toLowerCase();
+    const records = JSON.parse(localStorage.getItem('famcareRecords')) || [];
+    
+    const filtered = records.filter(record => 
+        record.patientName.toLowerCase().includes(searchInput)
+    );
 
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        alert('✓ Copied to clipboard!');
+    displayRecords(filtered);
+}
+
+function viewRecord(id) {
+    const records = JSON.parse(localStorage.getItem('famcareRecords')) || [];
+    const record = records.find(r => r.id === id);
+
+    if (record) {
+        alert(`Assessment Details:\n\nPatient: ${record.patientName}\nAge: ${record.patientAge}\nSymptoms: ${record.symptoms}\nSeverity: ${record.severity}\nCare Level: ${record.careLevel}\nDate: ${new Date(record.timestamp).toLocaleString()}`);
+    }
+}
+
+function deleteRecord(id) {
+    if (confirm('Are you sure you want to delete this record?')) {
+        let records = JSON.parse(localStorage.getItem('famcareRecords')) || [];
+        records = records.filter(r => r.id !== id);
+        localStorage.setItem('famcareRecords', JSON.stringify(records));
+        loadRecords();
+
+        // Also try to delete from backend
+        fetch(`${API_BASE_URL}/assessment/${id}`, {
+            method: 'DELETE'
+        }).catch(() => {
+            // Silently fail if backend is unavailable
+        });
+    }
+}
+
+// ============ FEEDBACK SECTION ============
+function submitFeedback(event) {
+    event.preventDefault();
+
+    const feedback = {
+        name: document.getElementById('feedbackName').value,
+        email: document.getElementById('feedbackEmail').value,
+        text: document.getElementById('feedbackText').value,
+        rating: parseInt(document.querySelector('input[name="rating"]:checked').value),
+        timestamp: new Date().toISOString()
+    };
+
+    // Try to save to backend
+    fetch(`${API_BASE_URL}/feedback`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(feedback)
+    }).then(response => {
+        if (response.ok) {
+            alert('Thank you for your feedback!');
+            event.target.reset();
+        } else {
+            saveToLocalStorage();
+        }
+    }).catch(() => {
+        saveToLocalStorage();
     });
+
+    function saveToLocalStorage() {
+        let feedbackList = JSON.parse(localStorage.getItem('famcareFeedback')) || [];
+        feedbackList.push({
+            id: Date.now(),
+            ...feedback
+        });
+        localStorage.setItem('famcareFeedback', JSON.stringify(feedbackList));
+        alert('Thank you for your feedback!');
+        event.target.reset();
+    }
 }

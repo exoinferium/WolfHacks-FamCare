@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FamCare</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">FamCare</div>
+            <ul class="nav-links">
+                <li><a href="#home" class="nav-link active" onclick="showSection('home')">Home</a></li>
+                <li><a href="#assessment" class="nav-link" onclick="showSection('assessment')">Health Check</a></li>
+                <li><a href="#history" class="nav-link" onclick="showSection('history')">My Records</a></li>
+                <li><a href="#emergency" class="nav-link" onclick="showSection('emergency')">Emergency Guide</a></li>
+                <li><a href="#feedback" class="nav-link" onclick="showSection('feedback')">Feedback</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="section active">
+        <div class="container">
+            <div class="hero">
+                <h1 class="hero-title">Welcome to FamCare</h1>
+                <p class="hero-subtitle">FamCare is an app where it allows families to quickly assess health situations, receive safe care guidance, and avoid unecessary hospital visits.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card" onclick="showSection('assessment')">
+                    <div class="feature-icon">🩺</div>
+                    <h3>Quick Health Assessment</h3>
+                    <p>Answer simple questions about symptoms and get instant guidance on care level needed.</p>
+                    <button class="btn-primary">Start Assessment</button>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Safe Care Guidance</h3>
+                    <p>Receive evidence-based recommendations for managing common health situations at home.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🏥</div>
+                    <h3>Hospital Decision Support</h3>
+                    <p>Clear guidance on whether to seek professional medical care or manage at home.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Health Records</h3>
+                    <p>Track assessments over time and maintain a digital health record for your family.</p>
+                </div>
+            </div>
+
+            <div class="how-it-works">
+                <h2>How FamCare Works</h2>
+                <div class="steps-container">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h4>Describe Symptoms</h4>
+                        <p>Tell us about the health concern - symptoms, duration, and severity</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h4>Quick Assessment</h4>
+                        <p>Answer guided questions to help us understand the situation better</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h4>Get Guidance</h4>
+                        <p>Receive recommendations for safe home care or seek professional help</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h4>Track & Monitor</h4>
+                        <p>Keep records of assessments and follow up on your health progress</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="important-notice">
+                <h3>⚠️ Important Disclaimer</h3>
+                <p>FamCare provides general health guidance only and is not a substitute for professional medical diagnosis, treatment, or advice. Always consult with qualified healthcare professionals for serious conditions, emergencies, or if you're unsure about your health.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Health Assessment Section -->
+    <section id="assessment" class="section">
+        <div class="container">
+            <h2>Health Assessment</h2>
+            <p class="section-subtitle">Quick evaluation to understand your health concern</p>
+
+            <div class="assessment-container">
+                <!-- Initial Symptom Input -->
+                <div id="symptom-input" class="assessment-stage active">
+                    <div class="assessment-card">
+                        <h3>What health concern do you have?</h3>
+                        <p class="stage-subtitle">Describe the main symptom or concern</p>
+                        
+                        <div class="form-group">
+                            <label for="patient-name">Patient Name:</label>
+                            <input type="text" id="patient-name" placeholder="e.g., John, Mom, Child">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="symptom-description">Describe the symptom:</label>
+                            <textarea id="symptom-description" placeholder="e.g., Sore throat, persistent cough, high fever..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="symptom-duration">How long has this been happening?</label>
+                            <select id="symptom-duration">
+                                <option value="">Select duration</option>
+                                <option value="less-than-1-hour">Less than 1 hour</option>
+                                <option value="1-6-hours">1-6 hours</option>
+                                <option value="6-24-hours">6-24 hours</option>
+                                <option value="1-3-days">1-3 days</option>
+                                <option value="3-7-days">3-7 days</option>
+                                <option value="more-than-7-days">More than 7 days</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Severity Level:</label>
+                            <div class="severity-buttons">
+                                <button class="severity-btn" onclick="setSeverity('mild')">😊 Mild</button>
+                                <button class="severity-btn" onclick="setSeverity('moderate')">😕 Moderate</button>
+                                <button class="severity-btn" onclick="setSeverity('severe')">😩 Severe</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="other-symptoms">Any other symptoms? (Optional)</label>
+                            <textarea id="other-symptoms" placeholder="e.g., headache, nausea, fatigue..."></textarea>
+                        </div>
+
+                        <button class="btn-primary" onclick="startAssessment()">Get Assessment</button>
+                    </div>
+                </div>
+
+                <!-- Questions Stage -->
+                <div id="questions-stage" class="assessment-stage">
+                    <div class="assessment-card">
+                        <h3>Quick Health Questions</h3>
+                        <p class="stage-subtitle">Help us understand your situation better</p>
+                        
+                        <div id="questions-container"></div>
+                        
+                        <div class="button-group">
+                            <button class="btn-secondary" onclick="goBackToSymptoms()">Back</button>
+                            <button class="btn-primary" onclick="submitAssessment()">Get My Results</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Stage -->
+                <div id="results-stage" class="assessment-stage">
+                    <div class="results-card">
+                        <h3>Your Assessment Results</h3>
+                        
+                        <div id="care-level" class="care-level-box"></div>
+
+                        <div class="care-guidance">
+                            <h4>Recommended Care:</h4>
+                            <div id="guidance-content"></div>
+                        </div>
+
+                        <div class="care-instructions">
+                            <h4>🏠 Home Care Tips:</h4>
+                            <div id="home-care-content"></div>
+                        </div>
+
+                        <div class="warning-signs">
+                            <h4>🚨 Seek Immediate Medical Help If:</h4>
+                            <div id="warning-signs-content"></div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn-secondary" onclick="saveAssessment()">Save to Records</button>
+                            <button class="btn-secondary" onclick="printAssessment()">Print Results</button>
+                            <button class="btn-primary" onclick="startNewAssessment()">New Assessment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Health History Section -->
+    <section id="history" class="section">
+        <div class="container">
+            <h2>My Health Records</h2>
+            <p class="section-subtitle">Track and review your family's health assessments</p>
+
+            <div class="history-controls">
+                <input type="text" id="search-history" placeholder="Search by patient name..." class="search-input">
+                <button class="btn-secondary" onclick="clearAllHistory()">Clear All Records</button>
+            </div>
+
+            <div id="history-list" class="history-list">
+                <p class="empty-state">No health records yet. Start an assessment to create your first record.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Emergency Guide Section -->
+    <section id="emergency" class="section">
+        <div class="container">
+            <h2>Emergency Guide</h2>
+            <p class="section-subtitle">Know when to seek immediate medical help</p>
+
+            <div class="emergency-alert">
+                <h3>🚨 Call Emergency Services Immediately If:</h3>
+                <div class="emergency-grid">
+                    <div class="emergency-card critical">
+                        <div class="emergency-icon">💔</div>
+                        <h4>Chest Pain</h4>
+                        <p>Sudden chest pain, pressure, or tightness</p>
+                    </div>
+                    <div class="emergency-card critical">
+                        <div class="emergency-icon">🧠</div>
+                        <h4>Neurological</h4>
+                        <p>Sudden confusion, severe headache, or loss of consciousness</p>
+                    </div>
+                    <div class="emergency-card critical">
+                        <div class="emergency-icon">🫁</div>
+                        <h4>Breathing Issues</h4>
+                        <p>Severe difficulty breathing or shortness of breath at rest</p>
+                    </div>
+                    <div class="emergency-card critical">
+                        <div class="emergency-icon">🩸</div>
+                        <h4>Severe Bleeding</h4>
+                        <p>Uncontrolled bleeding or major injuries</p>
+                    </div>
+                    <div class="emergency-card critical">
+                        <div class="emergency-icon">🌡️</div>
+                        <h4>Extreme Fever</h4>
+                        <p>Fever above 104°F (40°C) or fever in infants</p>
+                    </div>
+                    <div class="emergency-card critical">
+                        <div class="emergency-icon">⚠️</div>
+                        <h4>Severe Reactions</h4>
+                        <p>Allergic reactions with swelling, difficulty breathing, or rash</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="urgent-care-guide">
+                <h3>🏥 Visit Urgent Care or ER Within Hours If:</h3>
+                <div class="condition-list">
+                    <div class="condition-item">
+                        <span class="condition-icon">🤕</span>
+                        <div>
+                            <strong>Injury or Trauma</strong>
+                            <p>Possible fractures, head injuries, or major falls</p>
+                        </div>
+                    </div>
+                    <div class="condition-item">
+                        <span class="condition-icon">🥵</span>
+                        <div>
+                            <strong>High Fever</strong>
+                            <p>Fever 101-103°F that doesn't respond to medication</p>
+                        </div>
+                    </div>
+                    <div class="condition-item">
+                        <span class="condition-icon">🤢</span>
+                        <div>
+                            <strong>Severe Symptoms</strong>
+                            <p>Persistent vomiting, severe abdominal pain, or diarrhea</p>
+                        </div>
+                    </div>
+                    <div class="condition-item">
+                        <span class="condition-icon">👁️</span>
+                        <div>
+                            <strong>Vision/Hearing Loss</strong>
+                            <p>Sudden vision or hearing changes</p>
+                        </div>
+                    </div>
+                    <div class="condition-item">
+                        <span class="condition-icon">💊</span>
+                        <div>
+                            <strong>Medication Issues</strong>
+                            <p>Suspected overdose or severe medication reaction</p>
+                        </div>
+                    </div>
+                    <div class="condition-item">
+                        <span class="condition-icon">🩹</span>
+                        <div>
+                            <strong>Wound Concerns</strong>
+                            <p>Deep cuts, puncture wounds, or signs of infection</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-resources">
+                <h3>📞 Important Contact Numbers</h3>
+                <div class="contact-grid">
+                    <div class="contact-card">
+                        <h4>Emergency</h4>
+                        <p class="contact-number">911</p>
+                        <p class="contact-desc">Life-threatening emergencies</p>
+                    </div>
+                    <div class="contact-card">
+                        <h4>Poison Control</h4>
+                        <p class="contact-number">1-800-222-1222</p>
+                        <p class="contact-desc">Poisoning or overdose</p>
+                    </div>
+                    <div class="contact-card">
+                        <h4>Suicide Prevention</h4>
+                        <p class="contact-number">988</p>
+                        <p class="contact-desc">Mental health crisis</p>
+                    </div>
+                    <div class="contact-card">
+                        <h4>Your Doctor</h4>
+                        <p class="contact-number">Keep Handy</p>
+                        <p class="contact-desc">For non-emergency questions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feedback Section -->
+    <section id="feedback" class="section">
+        <div class="container">
+            <h2>Help Us Improve</h2>
+            <p class="section-subtitle">Your feedback helps us serve families better</p>
+
+            <div class="feedback-form-container">
+                <form id="feedback-form" class="feedback-form">
+                    <div class="form-group">
+                        <label for="feedback-name">Your Name:</label>
+                        <input type="text" id="feedback-name" placeholder="Name (optional)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedback-email">Email:</label>
+                        <input type="email" id="feedback-email" placeholder="Email (optional)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedback-category">Feedback Category:</label>
+                        <select id="feedback-category">
+                            <option value="">Select category</option>
+                            <option value="assessment">Assessment Quality</option>
+                            <option value="guidance">Care Guidance</option>
+                            <option value="usability">Ease of Use</option>
+                            <option value="feature">Feature Request</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>How helpful was FamCare?</label>
+                        <div class="rating-buttons">
+                            <button type="button" class="rating-btn" onclick="setRating(1)">😞 1</button>
+                            <button type="button" class="rating-btn" onclick="setRating(2)">😕 2</button>
+                            <button type="button" class="rating-btn" onclick="setRating(3)">😐 3</button>
+                            <button type="button" class="rating-btn" onclick="setRating(4)">🙂 4</button>
+                            <button type="button" class="rating-btn" onclick="setRating(5)">😄 5</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedback-message">Your Feedback:</label>
+                        <textarea id="feedback-message" placeholder="Please share your thoughts..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Submit Feedback</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 FamCare. Smart Health Decisions at Home. 🏥💚</p>
+        <p>Disclaimer: FamCare provides guidance only. Always consult healthcare professionals for serious health concerns.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

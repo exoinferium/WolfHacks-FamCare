@@ -1,0 +1,129 @@
+Common Cold
+runny nose, sneezing, sore throat, mild cough, congestion
+CTAS: 5
+Influenza
+fever, chills, body aches, fatigue, dry cough
+CTAS: 4
+COVID-19
+fever, cough, fatigue, loss of taste/smell, shortness of breath
+CTAS: 3
+Asthma
+wheezing, shortness of breath, chest tightness, coughing
+CTAS: 3
+Pneumonia
+chest pain, cough with mucus, fever, difficulty breathing
+CTAS: 3
+Bronchitis
+persistent cough, mucus, fatigue, chest discomfort
+CTAS: 4
+Heart Attack
+chest pain/pressure, shortness of breath, nausea, sweating, arm/jaw pain
+CTAS: 2
+Hypertension
+often no symptoms, headaches, dizziness
+CTAS: 5
+Stroke
+face drooping, arm weakness, slurred speech, confusion
+CTAS: 2
+Arrhythmia
+irregular heartbeat, dizziness, fainting, chest discomfort
+CTAS: 3
+Migraine
+severe headache, nausea, sensitivity to light/sound
+CTAS: 4
+Concussion
+headache, confusion, dizziness, memory loss
+CTAS: 3
+Epilepsy
+seizures, staring spells, confusion
+CTAS: 2
+Meningitis
+stiff neck, fever, headache, sensitivity to light
+CTAS: 2
+Parkinson’s Disease
+tremors, stiffness, slow movement
+CTAS: 5
+Food Poisoning
+nausea, vomiting, diarrhea, stomach cramps
+CTAS: 4
+Appendicitis
+sharp lower-right abdominal pain, fever, nausea
+CTAS: 3
+Gastroenteritis
+diarrhea, vomiting, cramps
+CTAS: 4
+Acid Reflux
+heartburn, chest discomfort, regurgitation
+CTAS: 5
+Irritable Bowel Syndrome
+bloating, cramps, diarrhea/constipation
+CTAS: 5
+Tuberculosis
+chronic cough, weight loss, night sweats
+CTAS: 3
+Strep Throat
+sore throat, fever, swollen lymph nodes
+CTAS: 4
+Mononucleosis
+fatigue, sore throat, fever, swollen glands
+CTAS: 4
+Chickenpox
+itchy rash, fever, fatigue
+CTAS: 4
+Measles
+rash, fever, cough, red eyes
+CTAS: 4
+Seasonal Allergies
+sneezing, runny nose, itchy eyes
+CTAS: 5
+Asthma (allergic)
+wheezing, coughing, breathing difficulty
+CTAS: 3
+Anaphylaxis
+swelling, difficulty breathing, low blood pressure, hives
+CTAS: 2
+Sprain
+pain, swelling, bruising, limited movement
+CTAS: 4
+Fracture
+severe pain, swelling, deformity
+CTAS: 3
+Arthritis
+joint pain, stiffness, swelling
+CTAS: 5
+Muscle Strain
+soreness, weakness, swelling
+CTAS: 5
+Anxiety
+restlessness, rapid heartbeat, worry, sweating
+CTAS: 4
+Depression
+sadness, fatigue, loss of interest, sleep changes
+CTAS: 4
+PTSD
+flashbacks, nightmares, severe anxiety
+CTAS: 4
+Panic Attack
+chest pain, shortness of breath, dizziness
+CTAS: 3
+Diabetes
+increased thirst, frequent urination, fatigue
+CTAS: 3
+Obesity
+fatigue, joint pain, shortness of breath
+CTAS: 5
+Cardiac Arrest
+no pulse, unconscious, not breathing
+CTAS: 1
+Stroke (severe)
+face drooping, arm weakness, speech difficulty
+CTAS: 2
+Severe Bleeding
+heavy blood loss, dizziness
+CTAS: 2
+Anaphylaxis (severe)
+swelling, breathing difficulty
+CTAS: 1–2
+Seizure
+uncontrolled shaking, loss of awareness
+CTAS: 2

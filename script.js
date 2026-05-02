@@ -4,6 +4,7 @@ const API_BASE_URL = 'http://localhost:5000/api';
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadRecords();
+    initializeChatbot();
 });
 
 // ============ NAVIGATION ============
@@ -26,6 +27,123 @@ function showSection(sectionId) {
     if (sectionId === 'records') {
         loadRecords();
     }
+}
+
+// ============ CHATBOT INITIALIZATION ============
+function initializeChatbot() {
+    // Initialize chat on page load
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+        chatMessages.innerHTML = `
+            <div class="chat-message bot-message">
+                <p>👋 Hi! I'm FamCare Bot. I'm here to help diagnose your symptoms using the Canadian Triage and Acuity Scale (CTAS). Describe your symptoms and I'll provide an assessment. How can I assist you today?</p>
+            </div>
+        `;
+    }
+}
+
+// ============ CHATBOT FUNCTIONS ============
+function sendChatMessage() {
+    const chatInput = document.getElementById('chat-input');
+    const message = chatInput.value.trim();
+
+    if (!message) return;
+
+    const chatMessages = document.getElementById('chat-messages');
+    
+    // Add user message
+    const userMessageDiv = document.createElement('div');
+    userMessageDiv.className = 'chat-message user-message';
+    userMessageDiv.innerHTML = `<p>${escapeHtml(message)}</p>`;
+    chatMessages.appendChild(userMessageDiv);
+
+    // Clear input
+    chatInput.value = '';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Get bot response
+    fetch(`${API_BASE_URL}/diagnose`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ symptoms: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const botMessageDiv = document.createElement('div');
+        botMessageDiv.className = 'chat-message bot-message';
+        
+        const diagnosis = data.diagnosis || 'Unable to determine diagnosis';
+        const recommendation = data.recommendation || 'Please consult a healthcare professional.';
+        const ctas = data.ctas || 'N/A';
+        
+        botMessageDiv.innerHTML = `
+            <p><strong>📋 Diagnosis:</strong> ${escapeHtml(diagnosis)}</p>
+            <p><strong>🏥 CTAS Level:</strong> ${escapeHtml(ctas)}</p>
+            <p><strong>💡 Recommendation:</strong> ${escapeHtml(recommendation)}</p>
+        `;
+        chatMessages.appendChild(botMessageDiv);
+        
+        // Add to history
+        addChatToHistory(message, diagnosis);
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'chat-message bot-message';
+        errorDiv.innerHTML = `<p>❌ Sorry, I encountered an error. Please make sure the backend server is running on port 5000.</p>`;
+        chatMessages.appendChild(errorDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+}
+
+function handleChatKeypress(event) {
+    if (event.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+function addChatToHistory(query, response) {
+    let chatHistory = JSON.parse(localStorage.getItem('famcareChatHistory')) || [];
+    chatHistory.push({
+        id: Date.now(),
+        query: query,
+        response: response,
+        timestamp: new Date().toISOString()
+    });
+    // Keep only last 50 conversations
+    if (chatHistory.length > 50) {
+        chatHistory = chatHistory.slice(-50);
+    }
+    localStorage.setItem('famcareChatHistory', JSON.stringify(chatHistory));
+    displayChatHistory();
+}
+
+function displayChatHistory() {
+    const chatHistory = JSON.parse(localStorage.getItem('famcareChatHistory')) || [];
+    const historyLog = document.getElementById('chat-history-log');
+
+    if (chatHistory.length === 0) {
+        historyLog.innerHTML = '<p class="empty-state">No conversations yet. Start chatting!</p>';
+        return;
+    }
+
+    historyLog.innerHTML = chatHistory.map(chat => `
+        <div class="chat-history-item">
+            <div class="chat-history-date">${new Date(chat.timestamp).toLocaleDateString()} ${new Date(chat.timestamp).toLocaleTimeString()}</div>
+            <div class="chat-history-query"><strong>Q:</strong> ${escapeHtml(chat.query.substring(0, 50))}${chat.query.length > 50 ? '...' : ''}</div>
+            <div class="chat-history-response"><strong>A:</strong> ${escapeHtml(chat.response.substring(0, 50))}${chat.response.length > 50 ? '...' : ''}</div>
+        </div>
+    `).join('');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // ============ ASSESSMENT LOGIC ============
@@ -248,23 +366,23 @@ function getWarningSignsForCondition(symptoms) {
 
     if (symptomsLower.includes('headache')) {
         warningSigns.push('Sudden severe headache');
-        warningSign.push('Headache with stiff neck and fever');
+        warningSigns.push('Headache with stiff neck and fever');
         warningSigns.push('Persistent headache with vision changes');
     }
 
     if (symptomsLower.includes('stomach') || symptomsLower.includes('abdominal')) {
         warningSigns.push('Severe abdominal pain');
         warningSigns.push('Vomiting for more than 4 hours');
-        warningSign.push('Blood in vomit or stool');
+        warningSigns.push('Blood in vomit or stool');
     }
 
-    if (warningSign.length === 0) {
-        warningSign.push('Any symptom that worsens significantly');
-        warningSign.push('Symptoms that don\'t improve after 1 week');
-        warningSign.push('Development of new symptoms');
+    if (warningSigns.length === 0) {
+        warningSigns.push('Any symptom that worsens significantly');
+        warningSigns.push('Symptoms that don\'t improve after 1 week');
+        warningSigns.push('Development of new symptoms');
     }
 
-    return warningSign;
+    return warningSigns;
 }
 
 function displayResults(result, assessment) {
@@ -300,11 +418,11 @@ function displayResults(result, assessment) {
                 ${result.recommendations.map(rec => `<li>${rec}</li>`).join('')}
             </ul>
             
-            ${result.warningSign && result.warningSign.length > 0 ? `
+            ${result.warningSigns && result.warningSigns.length > 0 ? `
                 <div class="warning-signs">
                     <h4>⚠️ Watch for these warning signs:</h4>
                     <ul>
-                        ${result.warningSign.map(sign => `<li>${sign}</li>`).join('')}
+                        ${result.warningSigns.map(sign => `<li>${sign}</li>`).join('')}
                     </ul>
                 </div>
             ` : ''}
